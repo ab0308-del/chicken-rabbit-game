@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>雞兔同籠大冒險 🐔🐰</title>
+<style>
+  :root{
+    --green:#4caf50; --green-dark:#2e7d32; --cream:#fffbe7;
+    --orange:#ff9800; --red:#e53935; --blue:#1e88e5; --purple:#8e24aa;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif;
+    background:linear-gradient(180deg,#c8e6c9 0%,#fffde7 100%);
+    min-height:100vh; color:#333;
+  }
+  .wrap{max-width:860px; margin:0 auto; padding:16px;}
+  .screen{display:none;}
+  .screen.active{display:block; animation:fadein .4s;}
+  @keyframes fadein{from{opacity:0; transform:translateY(10px);} to{opacity:1;}}
+  .card{
+    background:#fff; border-radius:20px; padding:24px;
+    box-shadow:0 4px 14px rgba(0,0,0,.12); margin-bottom:16px;
+  }
+  h1{color:var(--green-dark); text-align:center; font-size:2rem; margin-bottom:8px;}
+  h2{color:var(--green-dark); font-size:1.4rem; margin-bottom:12px;}
+  .subtitle{text-align:center; color:#666; margin-bottom:20px;}
+  .btn{
+    display:inline-block; border:none; border-radius:999px; cursor:pointer;
+    padding:12px 28px; font-size:1.1rem; font-weight:bold; font-family:inherit;
+    background:var(--green); color:#fff; transition:transform .1s, box-shadow .1s;
+    box-shadow:0 3px 0 var(--green-dark);
+  }
+  .btn:active{transform:translateY(2px); box-shadow:0 1px 0 var(--green-dark);}
+  .btn.orange{background:var(--orange); box-shadow:0 3px 0 #e65100;}
+  .btn.blue{background:var(--blue); box-shadow:0 3px 0 #0d47a1;}
+  .btn.small{padding:8px 18px; font-size:1rem;}
+  .btn:disabled{background:#bbb; box-shadow:0 3px 0 #999; cursor:not-allowed;}
+  .center{text-align:center;}
+  .big-emoji{font-size:3.4rem; text-align:center; margin:8px 0;}
+  .pen{
+    display:flex; flex-wrap:wrap; gap:6px; justify-content:center;
+    background:#f1f8e9; border:3px dashed var(--green); border-radius:16px;
+    padding:16px; min-height:90px; font-size:2.2rem; margin:12px 0;
+  }
+  .counter{
+    display:flex; justify-content:center; gap:24px; margin:12px 0; flex-wrap:wrap;
+  }
+  .counter .box{
+    background:var(--cream); border-radius:14px; padding:10px 22px; text-align:center;
+    border:2px solid #ffe082;
+  }
+  .counter .box .num{font-size:2rem; font-weight:bold; color:var(--green-dark);}
+  .feet-flash{color:var(--red) !important;}
+  .quiz{background:#e3f2fd; border-radius:14px; padding:16px; margin:14px 0;}
+  .quiz p{font-size:1.15rem; margin-bottom:10px;}
+  .opts{display:flex; gap:10px; flex-wrap:wrap;}
+  .opt{
+    border:2px solid var(--blue); background:#fff; color:var(--blue);
+    border-radius:999px; padding:10px 22px; font-size:1.05rem; font-weight:bold;
+    cursor:pointer; font-family:inherit;
+  }
+  .opt.correct{background:var(--green); border-color:var(--green); color:#fff;}
+  .opt.wrong{background:var(--red); border-color:var(--red); color:#fff; animation:shake .3s;}
+  @keyframes shake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+  .feedback{font-size:1.05rem; margin-top:10px; padding:10px 14px; border-radius:10px; display:none;}
+  .feedback.good{display:block; background:#e8f5e9; color:var(--green-dark);}
+  .feedback.bad{display:block; background:#ffebee; color:var(--red);}
+  table.list-table{border-collapse:collapse; margin:14px auto; width:100%;}
+  table.list-table th, table.list-table td{
+    border:2px solid #a5d6a7; padding:8px 4px; text-align:center; font-size:1rem;
+  }
+  table.list-table th{background:#c8e6c9; color:var(--green-dark);}
+  table.list-table td input{
+    width:44px; font-size:1rem; text-align:center; border:2px solid var(--orange);
+    border-radius:6px; padding:4px; font-family:inherit;
+  }
+  table.list-table td.done{background:#e8f5e9; font-weight:bold; color:var(--green-dark);}
+  table.list-table td.target{background:#fff9c4; cursor:pointer;}
+  table.list-table td.picked{background:var(--green); color:#fff; font-weight:bold;}
+  .step{background:#f3e5f5; border-left:6px solid var(--purple); border-radius:10px;
+        padding:14px; margin:12px 0; display:none;}
+  .step.show{display:block; animation:fadein .4s;}
+  .step .q{font-size:1.12rem; margin-bottom:10px;}
+  .step input{width:90px; font-size:1.1rem; text-align:center; border:2px solid var(--purple);
+      border-radius:8px; padding:6px; font-family:inherit;}
+  .hintbox{background:#fff8e1; border-radius:10px; padding:12px; margin-top:10px;
+      font-size:1rem; display:none; border:1px dashed var(--orange);}
+  .prob{background:var(--cream); border-radius:14px; padding:16px; margin:12px 0;
+      font-size:1.15rem; border:2px solid #ffe082;}
+  .stars{font-size:2rem; letter-spacing:4px;}
+  .progress{display:flex; gap:6px; justify-content:center; margin-bottom:14px; flex-wrap:wrap;}
+  .pstep{padding:6px 14px; border-radius:999px; background:#e0e0e0; font-size:.9rem; font-weight:bold;}
+  .pstep.now{background:var(--orange); color:#fff;}
+  .pstep.done{background:var(--green); color:#fff;}
+  .report-table{border-collapse:collapse; width:100%; margin:12px 0;}
+  .report-table th,.report-table td{border:1px solid #bbb; padding:8px; text-align:center;}
+  .report-table th{background:#c8e6c9;}
+  .advice{background:#fff3e0; border-radius:10px; padding:12px 16px; margin:8px 0; font-size:1.02rem;}
+  .badge{display:inline-block; background:var(--purple); color:#fff; border-radius:8px;
+      padding:2px 10px; font-size:.85rem; margin-right:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="progress" id="progress"></div>
+
+  <!-- ═══════════ 首頁 ═══════════ -->
+  <div class="screen active" id="s-start">
+    <div class="card center">
+      <div class="big-emoji">🐔🐰🎲</div>
+      <h1>雞兔同籠大冒險</h1>
+      <p class="subtitle">六下數學．第 5 單元「怎樣解題」5-3 雞兔問題</p>
+      <p style="font-size:1.1rem; margin-bottom:18px;">
+        農場主人數不清雞和兔了！<br>闖過 4 個關卡，成為「雞兔偵探」吧！
+      </p>
+      <p style="margin-bottom:18px; color:#666;">📝 記得拿出你的學習單，邊玩邊記錄喔！</p>
+      <button class="btn" onclick="go('s-l1')">🚀 開始冒險</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ 第 1 關：農場觀察站 ═══════════ -->
+  <div class="screen" id="s-l1">
+    <div class="card">
+      <h2>第 1 關｜農場觀察站 🔍</h2>
+      <p>籠子裡雞和兔<b>合起來一定是 8 隻</b>。按按鈕把雞換成兔（或换回來），看看腳的總數怎麼變！</p>
+      <div class="pen" id="pen1"></div>
+      <div class="counter">
+        <div class="box">🐔 雞<div class="num" id="c1-chick">8</div></div>
+        <div class="box">🐰 兔<div class="num" id="c1-rab">0</div></div>
+        <div class="box">🦶 總腳數<div class="num" id="c1-feet">16</div></div>
+      </div>
+      <div class="center" style="margin-bottom:10px;">
+        <button class="btn small orange" onclick="swapL1(-1)">把 1 隻雞 ➜ 換成兔</button>
+        <button class="btn small blue" onclick="swapL1(1)">把 1 隻兔 ➜ 換成雞</button>
+      </div>
+
+      <div class="quiz">
+        <p><b>觀察問題 1️⃣</b>：總隻數不變時，把 1 隻雞換成 1 隻兔，總腳數會怎樣？</p>
+        <div class="opts" id="q1a"></div>
+        <div class="feedback" id="f1a"></div>
+      </div>
+      <div class="quiz" id="quiz1b" style="display:none;">
+        <p><b>觀察問題 2️⃣</b>：把 1 隻兔換成 1 隻雞，總腳數會怎樣？</p>
+        <div class="opts" id="q1b"></div>
+        <div class="feedback" id="f1b"></div>
+      </div>
+      <div class="quiz" id="quiz1c" style="display:none;">
+        <p><b>小挑戰 🏆</b>：農場主人說「雞兔共 8 隻、腳共 <b style="color:var(--red)">22</b> 隻」。<br>
+        用上面的按鈕調一調，讓總腳數剛好是 22，再按「檢查」！</p>
+        <div class="center">
+          <button class="btn small" onclick="checkL1()">✅ 檢查</button>
+        </div>
+        <div class="feedback" id="f1c"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 第 2 關：列表偵探社 ═══════════ -->
+  <div class="screen" id="s-l2">
+    <div class="card">
+      <h2>第 2 關｜列表偵探社 📋</h2>
+      <div class="prob">🧓 爺爺家的院子裡養了雞和兔<b>共 10 隻</b>，牠們一共有 <b style="color:var(--red)">26 隻腳</b>。雞和兔各有多少隻呢？</div>
+      <p>先把表格中 <b style="color:var(--orange)">橘色框</b> 的總腳數算出來（雞 2 隻腳、兔 4 隻腳）：</p>
+      <table class="list-table" id="t2"></table>
+      <div class="feedback" id="f2a"></div>
+      <div id="l2pick" style="display:none;">
+        <p style="margin-top:8px;">🕵️ 全部算好了！<b>點一下</b>總腳數是 26 的那一格（黃色列）！</p>
+        <div class="feedback" id="f2b"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 第 3 關：假設法實驗室 ═══════════ -->
+  <div class="screen" id="s-l3">
+    <div class="card">
+      <h2>第 3 關｜假設法實驗室 🧪</h2>
+      <div class="prob">🧓 爺爺家的雞和兔<b>共 9 隻</b>，牠們一共有 <b style="color:var(--red)">32 隻腳</b>。雞和兔各有幾隻？<br>
+      <span style="font-size:.95rem; color:#666;">列表太慢了，數學家都用「假設法」！跟著步驟做做看👇</span></div>
+
+      <div class="step show" id="st1">
+        <p class="q">🥚 <b>步驟 1</b>：先「假設 9 隻<u>全部都是雞</u>」，那總共有幾隻腳？<br>
+        <span style="color:#888; font-size:.95rem;">（提示：雞有 2 隻腳）</span></p>
+        <input type="number" id="a31"> <button class="btn small" onclick="ck3(1)">確定</button>
+        <div class="feedback" id="f31"></div>
+      </div>
+      <div class="step" id="st2">
+        <p class="q">🔎 <b>步驟 2</b>：假設全是雞只有 18 隻腳，但實際上有 32 隻腳。<b>還差幾隻腳</b>？</p>
+        <input type="number" id="a32"> <button class="btn small" onclick="ck3(2)">確定</button>
+        <div class="feedback" id="f32"></div>
+      </div>
+      <div class="step" id="st3">
+        <p class="q">🔁 <b>步驟 3</b>：每把 1 隻雞換成 1 隻兔，總腳數會<b>多幾隻</b>？（第 1 關的發現！）</p>
+        <div class="opts" id="q33"></div>
+        <div class="feedback" id="f33"></div>
+      </div>
+      <div class="step" id="st4">
+        <p class="q">🎯 <b>步驟 4</b>：差 14 隻腳 ÷ 每換一次多 2 隻腳 ＝ 要換 <b>7 次</b>。<br>
+        所以「7」是<b>誰</b>的數量？</p>
+        <div class="opts" id="q34"></div>
+        <div class="feedback" id="f34"></div>
+      </div>
+      <div class="step" id="st5">
+        <p class="q">🐔 <b>步驟 5</b>：兔有 7 隻，那雞有幾隻？</p>
+        <input type="number" id="a35"> <button class="btn small" onclick="ck3(5)">確定</button>
+        <div class="feedback" id="f35"></div>
+        <div class="hintbox" id="verify3" style="display:none;">
+          ✅ <b>驗算</b>：雞 2×2＝4 隻腳，兔 4×7＝28 隻腳，4＋28＝32 隻腳，答對了！<br>
+          📝 把完整算式寫到學習單第 3 題吧！
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 第 4 關：生活變身舖 ═══════════ -->
+  <div class="screen" id="s-l4">
+    <div class="card">
+      <h2>第 4 關｜生活變身舖 🍱</h2>
+      <p style="margin-bottom:10px;">其實生活中到處都是「變身版」的雞兔問題——只是雞和兔換了樣子！</p>
+      <div class="prob">🍱 便當店有<b>排骨便當（80 元）</b>和<b>鮭魚便當（100 元）</b>。
+      顧客訂了 <b>12 個</b>便當，共付 <b style="color:var(--red)">1040 元</b>。兩種便當各訂了幾個？</div>
+      <p style="color:#888; font-size:.95rem; margin-bottom:8px;">💡 想一想：這題的「雞」是誰？「兔」是誰？「總腳數」又是誰？</p>
+      <div class="center" style="margin:10px 0;">
+        排骨便當 <input type="number" id="a41" style="width:70px; font-size:1.1rem; text-align:center; border:2px solid var(--orange); border-radius:8px; padding:6px;"> 個
+        鮭魚便當 <input type="number" id="a42" style="width:70px; font-size:1.1rem; text-align:center; border:2px solid var(--orange); border-radius:8px; padding:6px;"> 個
+        <button class="btn small" onclick="ck4()">✅ 檢查</button>
+        <button class="btn small blue" onclick="toggleHint('h4')">💡 提示</button>
+      </div>
+      <div class="hintbox" id="h4">
+        假設 12 個<u>全部是排骨便當</u>：80×12＝960（元）→ 差 1040－960＝80（元）→
+        每把 1 個排骨換成鮭魚，多 100－80＝20（元）→ 80÷20＝4 ……這是「換成鮭魚」的個數！
+      </div>
+      <div class="feedback" id="f4"></div>
+
+      <div id="bonus4" style="display:none; margin-top:16px;">
+        <div class="prob">🅿️ <b>素養挑戰</b>：停車場「機車 30 元、汽車 150 元」，今天共停了 <b>180 次</b>，
+        總收入 <b style="color:var(--red)">19800 元</b>。機車、汽車各停幾次？</div>
+        <div class="center" style="margin:10px 0;">
+          機車 <input type="number" id="a43" style="width:70px; font-size:1.1rem; text-align:center; border:2px solid var(--orange); border-radius:8px; padding:6px;"> 次
+          汽車 <input type="number" id="a44" style="width:70px; font-size:1.1rem; text-align:center; border:2px solid var(--orange); border-radius:8px; padding:6px;"> 次
+          <button class="btn small" onclick="ck4b()">✅ 檢查</button>
+          <button class="btn small blue" onclick="toggleHint('h4b')">💡 提示</button>
+        </div>
+        <div class="hintbox" id="h4b">
+          假設 180 次全是機車：30×180＝5400 → 差 19800－5400＝14400 →
+          每換 1 次汽車多 150－30＝120 → 14400÷120＝120（汽車的次數）！
+        </div>
+        <div class="feedback" id="f4b"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ 結算報告 ═══════════ -->
+  <div class="screen" id="s-report">
+    <div class="card center">
+      <div class="big-emoji">🏅</div>
+      <h1>恭喜你成為雞兔偵探！</h1>
+      <div class="stars" id="finalstars"></div>
+    </div>
+    <div class="card">
+      <h2>📊 我的闖關分析</h2>
+      <table class="report-table" id="rpt"></table>
+      <div id="adviceBox"></div>
+      <div class="center" style="margin-top:14px;">
+        <button class="btn blue" onclick="downloadCSV()">⬇️ 下載闖關紀錄（給老師）</button>
+        <button class="btn orange" onclick="location.reload()">🔄 再玩一次</button>
+      </div>
+      <p class="center" style="margin-top:12px; color:#666;">📝 最後別忘了完成學習單的「偵探反思」喔！</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ══════════════ 共用狀態 ══════════════ */
+const S = {
+  level: 0,
+  attempts: {1:0, 2:0, 3:0, 4:0},
+  errors:   {1:0, 2:0, 3:0, 4:0},
+  tags: {},   // 迷思標記
+  student: ''
+};
+const TAG_ADVICE = {
+  '±2規律':      '「總隻數不變時，換 1 隻動物，腳數差 2」——回到第 1 關按按鈕多觀察幾次！',
+  '腳數對應':    '記住：🐔雞 2 隻腳、🐰兔 4 隻腳。算總腳數時先想清楚是誰的腳！',
+  '腳數計算':    '總腳數＝雞數×2＋兔數×4，列出算式再算，不要用心算搶快！',
+  '假設反了':    '假設「全是雞」時，算出來的是要「換成兔」的數量（也就是兔）！假設誰，答案就是另一個。',
+  '情境轉換':    '便當、車票也是雞兔問題：便宜的＝雞、貴的＝兔、總錢數＝總腳數。先找出對應再假設！'
+};
+function addTag(t){ S.tags[t] = (S.tags[t]||0)+1; }
+
+const SCREENS = ['s-start','s-l1','s-l2','s-l3','s-l4','s-report'];
+const NAMES = ['開始','第1關 觀察','第2關 列表','第3關 假設法','第4關 生活','偵探報告'];
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  S.level = SCREENS.indexOf(id);
+  renderProgress();
+  window.scrollTo(0,0);
+}
+function renderProgress(){
+  const p = document.getElementById('progress');
+  p.innerHTML = '';
+  NAMES.forEach((n,i)=>{
+    const d = document.createElement('div');
+    d.className = 'pstep' + (i<S.level?' done':(i===S.level?' now':''));
+    d.textContent = n;
+    p.appendChild(d);
+  });
+}
+renderProgress();
+function fb(id, ok, msg){
+  const f = document.getElementById(id);
+  f.className = 'feedback ' + (ok?'good':'bad');
+  f.innerHTML = msg;
+}
+function toggleHint(id){
+  const h = document.getElementById(id);
+  h.style.display = h.style.display==='block' ? 'none' : 'block';
+}
+
+/* ══════════════ 第 1 關 ══════════════ */
+let c1 = 8; // 雞數（總數8）
+function renderL1(){
+  const pen = document.getElementById('pen1');
+  pen.innerHTML = '🐔'.repeat(c1) + '🐰'.repeat(8-c1);
+  document.getElementById('c1-chick').textContent = c1;
+  document.getElementById('c1-rab').textContent = 8-c1;
+  const feet = c1*2 + (8-c1)*4;
+  const fEl = document.getElementById('c1-feet');
+  fEl.textContent = feet;
+  fEl.classList.add('feet-flash');
+  setTimeout(()=>fEl.classList.remove('feet-flash'), 400);
+}
+function swapL1(d){ // d=1 兔→雞, d=-1 雞→兔
+  c1 += d;
+  if(c1<0) c1=0;
+  if(c1>8) c1=8;
+  renderL1();
+}
+renderL1();
+
+function makeOpts(elId, opts, correct, onRight, tag, fbId, rightMsg, wrongMsg){
+  const box = document.getElementById(elId);
+  box.innerHTML = '';
+  opts.forEach(o=>{
+    const b = document.createElement('button');
+    b.className = 'opt'; b.textContent = o;
+    b.onclick = ()=>{
+      S.attempts[Math.min(Math.max(S.level,1),4)]++;
+      if(o===correct){
+        b.classList.add('correct');
+        box.querySelectorAll('.opt').forEach(x=>x.disabled=true);
+        fb(fbId, true, rightMsg);
+        onRight && onRight();
+      }else{
+        b.classList.add('wrong'); b.disabled = true;
+        S.errors[Math.min(Math.max(S.level,1),4)]++;
+        if(tag) addTag(tag);
+        fb(fbId, false, wrongMsg);
+      }
+    };
+    box.appendChild(b);
+  });
+}
+makeOpts('q1a', ['多 2 隻','少 2 隻','不變'], '多 2 隻',
+  ()=>{ document.getElementById('quiz1b').style.display='block'; }, '±2規律', 'f1a',
+  '答對了！兔比雞多 2 隻腳，所以換 1 隻就多 2 隻腳 🎉',
+  '再按按鈕試試看：雞換成兔，腳是變多還是變少？');
+makeOpts('q1b', ['多 2 隻','少 2 隻','不變'], '少 2 隻',
+  ()=>{ document.getElementById('quiz1c').style.display='block'; }, '±2規律', 'f1b',
+  '沒錯！換回雞，腳就少 2 隻。你發現規律了！',
+  '想一想：雞的腳比較少還是比較多呢？');
+function checkL1(){
+  S.attempts[1]++;
+  const feet = c1*2 + (8-c1)*4;
+  if(feet===22){
+    fb('f1c', true, `太厲害了！🐔雞 ${c1} 隻、🐰兔 ${8-c1} 隻：${c1}×2＋${8-c1}×4＝22 ✔️<br>📝 把答案記到學習單第 1 題，然後前進第 2 關！<br><br><button class="btn small" onclick="go('s-l2')">➡️ 前進第 2 關</button>`);
+  }else{
+    S.errors[1]++; addTag('腳數計算');
+    fb('f1c', false, `現在總腳數是 ${feet}，還${feet>22?'太多':'太少'}喔！想想剛剛的規律：換 1 隻差 2 隻腳。`);
+  }
+}
+
+/* ══════════════ 第 2 關 ══════════════ */
+const L2 = [
+  {c:10, r:0, f:20, given:true},
+  {c:9,  r:1, f:22, given:true},
+  {c:8,  r:2, f:24, given:false},
+  {c:7,  r:3, f:26, given:false},
+  {c:6,  r:4, f:28, given:false},
+];
+let l2solved = 0;
+function renderL2(){
+  const t = document.getElementById('t2');
+  let h1='<tr><th>🐔 雞（隻）</th>', h2='<tr><th>🐰 兔（隻）</th>', h3='<tr><th>🦶 總腳數</th>';
+  L2.forEach((o,i)=>{
+    h1 += `<td>${o.c}</td>`;
+    h2 += `<td>${o.r}</td>`;
+    if(o.given) h3 += `<td class="done">${o.f}</td>`;
+    else h3 += `<td id="l2c${i}"><input type="number" id="l2i${i}" onkeydown="if(event.key==='Enter')ckL2(${i})"> <button class="btn small" style="padding:4px 10px;font-size:.85rem;" onclick="ckL2(${i})">OK</button></td>`;
+  });
+  t.innerHTML = h1+'</tr>' + h2+'</tr>' + h3+'</tr>';
+}
+function ckL2(i){
+  S.attempts[2]++;
+  const v = Number(document.getElementById('l2i'+i).value);
+  const o = L2[i];
+  if(v===o.f){
+    const td = document.getElementById('l2c'+i);
+    td.className='done'; td.textContent=o.f;
+    l2solved++;
+    fb('f2a', true, `✔️ 雞 ${o.c}×2＋兔 ${o.r}×4＝${o.f}，正確！`);
+    if(l2solved===3){
+      fb('f2a', true, '✔️ 表格完成！注意看：每一格都比前一格<b>多 2</b>！');
+      document.getElementById('l2pick').style.display='block';
+      L2.forEach((o2,j)=>{
+        const cells = document.querySelectorAll('#t2 tr:last-child td:not(:first-child)');
+        cells[j].classList.add('target');
+        cells[j].onclick = ()=>pickL2(j, cells);
+      });
+    }
+  }else{
+    S.errors[2]++; addTag('腳數計算');
+    if(v === o.c*4 + o.r*2) { addTag('腳數對應'); fb('f2a', false, '喔喔，你是不是把雞和兔的腳弄反了？🐔雞 2 隻腳、🐰兔 4 隻腳！'); }
+    else fb('f2a', false, `再算一次：雞 ${o.c} 隻 ×2 ＋ 兔 ${o.r} 隻 ×4 ＝ ？`);
+  }
+}
+function pickL2(j, cells){
+  S.attempts[2]++;
+  if(L2[j].f===26){
+    cells[j].classList.add('picked');
+    fb('f2b', true, `🎉 找到了！<b>雞 7 隻、兔 3 隻</b>：7×2＋3×4＝26 ✔️<br>📝 記到學習單第 2 題。<br>可是……如果有 100 隻動物，列表要列到手痠！有更快的方法嗎？<br><br><button class="btn small" onclick="go('s-l3')">➡️ 前進第 3 關：假設法！</button>`);
+  }else{
+    S.errors[2]++;
+    fb('f2b', false, `這一格總腳數是 ${L2[j].f}，不是 26 喔，再找找！`);
+  }
+}
+renderL2();
+
+/* ══════════════ 第 3 關 ══════════════ */
+function showStep(n){ document.getElementById('st'+n).classList.add('show'); }
+function ck3(n){
+  S.attempts[3]++;
+  if(n===1){
+    const v = Number(document.getElementById('a31').value);
+    if(v===18){ fb('f31',true,'✔️ 2×9＝18 隻腳！'); showStep(2); }
+    else{
+      S.errors[3]++;
+      if(v===36){ addTag('腳數對應'); fb('f31',false,'36 是「全部是兔」的腳數喔！我們假設的是「全部是<b>雞</b>」——雞有 2 隻腳。'); }
+      else{ addTag('腳數計算'); fb('f31',false,'想一想：9 隻雞，每隻 2 隻腳，2×9＝？'); }
+    }
+  }
+  if(n===2){
+    const v = Number(document.getElementById('a32').value);
+    if(v===14){ fb('f32',true,'✔️ 32－18＝14，還差 14 隻腳！'); showStep(3); }
+    else{ S.errors[3]++; addTag('腳數計算'); fb('f32',false,'實際 32 隻腳 － 假設的 18 隻腳 ＝ ？'); }
+  }
+  if(n===5){
+    const v = Number(document.getElementById('a35').value);
+    if(v===2){
+      fb('f35',true,'✔️ 9－7＝2，雞有 2 隻！');
+      document.getElementById('verify3').style.display='block';
+      setTimeout(()=>{
+        fb('f35',true,'✔️ 9－7＝2，雞有 2 隻！<br><br><button class="btn small" onclick="go(\'s-l4\')">➡️ 前進最終關！</button>');
+        document.getElementById('verify3').style.display='block';
+      }, 600);
+    }
+    else{ S.errors[3]++; addTag('腳數計算'); fb('f35',false,'總共 9 隻，兔佔了 7 隻，剩下的是雞：9－7＝？'); }
+  }
+}
+makeOpts('q33', ['多 1 隻','多 2 隻','多 4 隻'], '多 2 隻',
+  ()=>{ showStep(4); }, '±2規律', 'f33',
+  '✔️ 沒錯！4－2＝2，每換一次多 2 隻腳。',
+  '回想第 1 關：兔 4 腳、雞 2 腳，換 1 隻差幾隻腳？');
+makeOpts('q34', ['🐔 雞的數量','🐰 兔的數量'], '🐰 兔的數量',
+  ()=>{ showStep(5); }, '假設反了', 'f34',
+  '✔️ 答對了！我們是把雞「換成兔」，換了 7 次，所以兔有 7 隻。<b>假設全是雞，算出來的是兔</b>！',
+  '想一想：我們把雞「換成」了什麼？換了 7 次，就生出 7 隻…？');
+
+/* ══════════════ 第 4 關 ══════════════ */
+function ck4(){
+  S.attempts[4]++;
+  const p = Number(document.getElementById('a41').value);
+  const s = Number(document.getElementById('a42').value);
+  if(p===8 && s===4){
+    fb('f4', true, '🎉 正確！排骨 8 個、鮭魚 4 個：80×8＋100×4＝1040 ✔️<br>你發現了嗎？<b>便當就是雞兔問題變裝的</b>！排骨＝雞、鮭魚＝兔、總錢＝總腳數。<br>敢不敢挑戰最後的素養題？👇');
+    document.getElementById('bonus4').style.display='block';
+  }else{
+    S.errors[4]++; addTag('情境轉換');
+    if(p+s!==12) fb('f4', false, '先檢查：兩種便當合起來要是 12 個喔！');
+    else if(p===4&&s===8){ addTag('假設反了'); fb('f4', false, '數字對了但位置反了！假設全是排骨（便宜的），算出來的是「鮭魚」的個數。'); }
+    else fb('f4', false, `80×${p}＋100×${s}＝${80*p+100*s}，不是 1040。按「💡提示」用假設法一步步算！`);
+  }
+}
+function ck4b(){
+  S.attempts[4]++;
+  const m = Number(document.getElementById('a43').value);
+  const c = Number(document.getElementById('a44').value);
+  if(m===60 && c===120){
+    fb('f4b', true, '🏆 太強了！機車 60 次、汽車 120 次：30×60＋150×120＝19800 ✔️<br><br><button class="btn" onclick="finish()">🏅 領取偵探報告</button>');
+  }else{
+    S.errors[4]++; addTag('情境轉換');
+    if(m+c!==180) fb('f4b', false, '機車＋汽車要等於 180 次喔！');
+    else fb('f4b', false, `30×${m}＋150×${c}＝${30*m+150*c} 元，不是 19800。試試假設法（按💡提示）！`);
+  }
+}
+
+/* ══════════════ 結算 ══════════════ */
+function finish(){
+  go('s-report');
+  const lv = ['','第1關 農場觀察站','第2關 列表偵探社','第3關 假設法實驗室','第4關 生活變身舖'];
+  let stars = 0, html = '<tr><th>關卡</th><th>作答次數</th><th>答錯次數</th><th>表現</th></tr>';
+  for(let i=1;i<=4;i++){
+    const a=S.attempts[i], e=S.errors[i];
+    const st = e===0?'⭐⭐⭐':(e<=2?'⭐⭐':'⭐');
+    stars += st.length/1;
+    html += `<tr><td>${lv[i]}</td><td>${a}</td><td>${e}</td><td>${st}</td></tr>`;
+  }
+  document.getElementById('rpt').innerHTML = html;
+  const total = Object.values(S.errors).reduce((x,y)=>x+y,0);
+  document.getElementById('finalstars').textContent =
+    total===0 ? '⭐⭐⭐ 完美偵探！' : (total<=4 ? '⭐⭐ 優秀偵探！' : '⭐ 見習偵探，再挑戰一次會更棒！');
+  const box = document.getElementById('adviceBox');
+  const keys = Object.keys(S.tags);
+  if(keys.length===0){
+    box.innerHTML = '<div class="advice">💯 沒有發現迷思，觀念非常清楚！可以當小老師教同學囉！</div>';
+  }else{
+    box.innerHTML = '<h2 style="margin-top:14px;">💡 給你的小建議</h2>' + keys.map(k=>
+      `<div class="advice"><span class="badge">${k} ×${S.tags[k]}</span>${TAG_ADVICE[k]}</div>`).join('');
+  }
+}
+function downloadCSV(){
+  const name = prompt('請輸入你的班級座號姓名（會寫進紀錄檔）：','');
+  const lv = ['','第1關農場觀察站','第2關列表偵探社','第3關假設法實驗室','第4關生活變身舖'];
+  let rows = [['學生', name||'未填'], ['日期', new Date().toLocaleString('zh-TW')], [],
+              ['關卡','作答次數','答錯次數']];
+  for(let i=1;i<=4;i++) rows.push([lv[i], S.attempts[i], S.errors[i]]);
+  rows.push([]); rows.push(['迷思類型','次數']);
+  Object.keys(S.tags).forEach(k=>rows.push([k, S.tags[k]]));
+  const csv = '﻿' + rows.map(r=>r.join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `雞兔同籠闖關紀錄_${name||'學生'}.csv`;
+  a.click();
+}
+</script>
+</body>
+</html>
