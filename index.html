@@ -237,8 +237,8 @@
       <div class="feedback" id="f4"></div>
 
       <div id="bonus4" style="display:none; margin-top:16px;">
-        <div class="prob">🅿️ <b>素養挑戰</b>：停車場「機車 30 元、汽車 150 元」，今天共停了 <b>180 次</b>，
-        總收入 <b style="color:var(--red)">19800 元</b>。機車、汽車各停幾次？</div>
+        <div class="prob">🅿️ <b>素養挑戰</b>：停車場「機車 20 元、汽車 60 元」，今天共停了 <b>15 次</b>，
+        總收入 <b style="color:var(--red)">500 元</b>。機車、汽車各停幾次？</div>
         <div class="center" style="margin:10px 0;">
           機車 <input type="number" id="a43" style="width:70px; font-size:1.1rem; text-align:center; border:2px solid var(--orange); border-radius:8px; padding:6px;"> 次
           汽車 <input type="number" id="a44" style="width:70px; font-size:1.1rem; text-align:center; border:2px solid var(--orange); border-radius:8px; padding:6px;"> 次
@@ -246,8 +246,8 @@
           <button class="btn small blue" onclick="toggleHint('h4b')">💡 提示</button>
         </div>
         <div class="hintbox" id="h4b">
-          假設 180 次全是機車：30×180＝5400 → 差 19800－5400＝14400 →
-          每換 1 次汽車多 150－30＝120 → 14400÷120＝120（汽車的次數）！
+          假設 15 次全是機車：20×15＝300 → 差 500－300＝200 →
+          每換 1 次汽車多 60－20＝40 → 200÷40＝5（汽車的次數）！
         </div>
         <div class="feedback" id="f4b"></div>
       </div>
@@ -266,7 +266,7 @@
       <table class="report-table" id="rpt"></table>
       <div id="adviceBox"></div>
       <div class="center" style="margin-top:14px;">
-        <button class="btn blue" onclick="downloadCSV()">⬇️ 下載闖關紀錄（給老師）</button>
+        <button class="btn blue" onclick="makeAward()">🏆 領取偵探獎狀</button>
         <button class="btn orange" onclick="location.reload()">🔄 再玩一次</button>
       </div>
       <p class="center" style="margin-top:12px; color:#666;">📝 最後別忘了完成學習單的「偵探反思」喔！</p>
@@ -550,13 +550,13 @@ function ck4b(){
   S.attempts[4]++;
   const m = Number(document.getElementById('a43').value);
   const c = Number(document.getElementById('a44').value);
-  if(m===60 && c===120){
+  if(m===10 && c===5){
     logLevel(4);
-    fb('f4b', true, '🏆 太強了！機車 60 次、汽車 120 次：30×60＋150×120＝19800 ✔️<br><br><button class="btn" onclick="finish()">🏅 領取偵探報告</button>');
+    fb('f4b', true, '🏆 太強了！機車 10 次、汽車 5 次：20×10＋60×5＝500 ✔️<br><br><button class="btn" onclick="finish()">🏅 領取偵探報告</button>');
   }else{
     S.errors[4]++; addTag('情境轉換');
-    if(m+c!==180) fb('f4b', false, '機車＋汽車要等於 180 次喔！');
-    else fb('f4b', false, `30×${m}＋150×${c}＝${30*m+150*c} 元，不是 19800。試試假設法（按💡提示）！`);
+    if(m+c!==15) fb('f4b', false, '機車＋汽車要等於 15 次喔！');
+    else fb('f4b', false, `20×${m}＋60×${c}＝${20*m+60*c} 元，不是 500。試試假設法（按💡提示）！`);
   }
 }
 
@@ -584,19 +584,46 @@ function finish(){
       `<div class="advice"><span class="badge">${k} ×${S.tags[k]}</span>${TAG_ADVICE[k]}</div>`).join('');
   }
 }
-function downloadCSV(){
-  const name = prompt('請輸入你的班級座號姓名（會寫進紀錄檔）：','');
-  const lv = ['','第1關農場觀察站','第2關列表偵探社','第3關假設法實驗室','第4關生活變身舖'];
-  let rows = [['學生', name||'未填'], ['日期', new Date().toLocaleString('zh-TW')], [],
-              ['關卡','作答次數','答錯次數']];
-  for(let i=1;i<=4;i++) rows.push([lv[i], S.attempts[i], S.errors[i]]);
-  rows.push([]); rows.push(['迷思類型','次數']);
-  Object.keys(S.tags).forEach(k=>rows.push([k, S.tags[k]]));
-  const csv = '﻿' + rows.map(r=>r.join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+function makeAward(){
+  const name = prompt('請輸入你的名字（會印在獎狀上）：','') || ('學號 ' + (S.student||''));
+  const total = Object.values(S.errors).reduce((x,y)=>x+y,0);
+  const rank = total===0 ? '完美偵探' : (total<=4 ? '優秀偵探' : '見習偵探');
+  const stars = total===0 ? '⭐⭐⭐' : (total<=4 ? '⭐⭐' : '⭐');
+  const cv = document.createElement('canvas');
+  cv.width = 1200; cv.height = 850;
+  const g = cv.getContext('2d');
+  const bg = g.createLinearGradient(0,0,0,850);
+  bg.addColorStop(0,'#fffbe7'); bg.addColorStop(1,'#e8f5e9');
+  g.fillStyle = bg; g.fillRect(0,0,1200,850);
+  g.strokeStyle = '#f59e0b'; g.lineWidth = 14; g.strokeRect(30,30,1140,790);
+  g.strokeStyle = '#4caf50'; g.lineWidth = 4;  g.strokeRect(52,52,1096,746);
+  g.font = '54px serif'; g.textAlign = 'center';
+  g.fillText('🐔', 100, 120); g.fillText('🐰', 1100, 120);
+  g.fillText('🐰', 100, 780); g.fillText('🐔', 1100, 780);
+  g.fillStyle = '#2e7d32';
+  g.font = 'bold 64px "Microsoft JhengHei", sans-serif';
+  g.fillText('雞 兔 偵 探 獎 狀', 600, 165);
+  g.font = '26px "Microsoft JhengHei", sans-serif';
+  g.fillStyle = '#888888';
+  g.fillText('─ 雞兔同籠大冒險 · 完賽認證 ─', 600, 210);
+  g.fillStyle = '#1a1a2e';
+  g.font = 'bold 52px "Microsoft JhengHei", sans-serif';
+  g.fillText(name + '　同學', 600, 320);
+  g.font = '30px "Microsoft JhengHei", sans-serif';
+  g.fillStyle = '#444444';
+  g.fillText('恭喜你完成「雞兔同籠大冒險」全部四關挑戰，', 600, 410);
+  g.fillText('學會了觀察規律、列表法、假設法與生活應用，', 600, 460);
+  g.fillText('特此頒發本獎狀，以茲鼓勵！', 600, 510);
+  g.font = 'bold 58px "Microsoft JhengHei", sans-serif';
+  g.fillStyle = '#f59e0b';
+  g.fillText(stars + ' ' + rank + ' ' + stars, 600, 620);
+  g.font = '26px "Microsoft JhengHei", sans-serif';
+  g.fillStyle = '#666666';
+  const d = new Date();
+  g.fillText(d.getFullYear() + ' 年 ' + (d.getMonth()+1) + ' 月 ' + d.getDate() + ' 日', 600, 730);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `雞兔同籠闖關紀錄_${name||'學生'}.csv`;
+  a.href = cv.toDataURL('image/png');
+  a.download = '雞兔偵探獎狀_' + name + '.png';
   a.click();
 }
 </script>
