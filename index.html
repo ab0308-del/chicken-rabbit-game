@@ -116,8 +116,10 @@
       <p style="font-size:1.1rem; margin-bottom:18px;">
         農場主人數不清雞和兔了！<br>闖過 4 個關卡，成為「雞兔偵探」吧！
       </p>
-      <p style="margin-bottom:18px; color:#666;">📝 記得拿出你的學習單，邊玩邊記錄喔！</p>
-      <button class="btn" onclick="go('s-l1')">🚀 開始冒險</button>
+      <p style="margin-bottom:12px; color:#666;">📝 記得拿出你的學習單，邊玩邊記錄喔！</p>
+      <p style="margin-bottom:8px;"><input type="text" id="stuId" maxlength="5" inputmode="numeric" placeholder="班級＋座號，例：60105" style="font-size:1.2rem; text-align:center; border:2px solid var(--green); border-radius:10px; padding:10px; width:250px; font-family:inherit;"></p>
+      <p id="idErr" style="color:var(--red); margin-bottom:12px; display:none;">請輸入 5 位數字：班級 3 碼＋座號 2 碼（例：60105）</p>
+      <button class="btn" onclick="startGame()">🚀 開始冒險</button>
     </div>
   </div>
 
@@ -279,8 +281,10 @@ const S = {
   level: 0,
   attempts: {1:0, 2:0, 3:0, 4:0},
   errors:   {1:0, 2:0, 3:0, 4:0},
-  tags: {},   // 迷思標記
-  student: ''
+  tags: {},   // 迷思標記（全場）
+  tagsL: {1:{},2:{},3:{},4:{}},   // 迷思標記（分關）
+  levelStart: {},
+  student: '', cls: '', seat: ''
 };
 const TAG_ADVICE = {
   '±2規律':      '「總隻數不變時，換 1 隻動物，腳數差 2」——回到第 1 關按按鈕多觀察幾次！',
@@ -289,7 +293,50 @@ const TAG_ADVICE = {
   '假設反了':    '假設「全是雞」時，算出來的是要「換成兔」的數量（也就是兔）！假設誰，答案就是另一個。',
   '情境轉換':    '便當、車票也是雞兔問題：便宜的＝雞、貴的＝兔、總錢數＝總腳數。先找出對應再假設！'
 };
-function addTag(t){ S.tags[t] = (S.tags[t]||0)+1; }
+function curLv(){ return Math.min(Math.max(S.level,1),4); }
+function addTag(t){
+  S.tags[t] = (S.tags[t]||0)+1;
+  const L = curLv();
+  S.tagsL[L][t] = (S.tagsL[L][t]||0)+1;
+  logRow({ level: L, event: 'fail', tags: {[t]:1} });
+}
+
+/* ══════════════ Supabase 即時學習紀錄 ══════════════ */
+const SUPA_URL = 'https://demckofqselwofbpdztn.supabase.co/rest/v1/game_log';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlbWNrb2Zxc2Vsd29mYnBkenRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4Mzk3MDYsImV4cCI6MjA5MzQxNTcwNn0.OQFeOvbYVKjHey7soPbuLGtkzCICKg1QPdm8w4l2sS8';
+function logRow(part){
+  if(!S.student) return;
+  const row = Object.assign({student:S.student, class:S.cls, seat:S.seat,
+    level:0, event:'', attempts:0, errors:0, tags:{}, duration_sec:0}, part);
+  const q = JSON.parse(localStorage.getItem('ktq')||'[]');
+  q.push(row); localStorage.setItem('ktq', JSON.stringify(q));
+  flushQ();
+}
+async function flushQ(){
+  const q = JSON.parse(localStorage.getItem('ktq')||'[]');
+  if(!q.length) return;
+  try{
+    const r = await fetch(SUPA_URL, {method:'POST',
+      headers:{apikey:SUPA_KEY, Authorization:'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json', Prefer:'return=minimal'},
+      body: JSON.stringify(q)});
+    if(r.ok) localStorage.setItem('ktq','[]');
+  }catch(e){/* 離線中，30 秒後自動重試 */}
+}
+setInterval(flushQ, 30000);
+function startGame(){
+  const v = document.getElementById('stuId').value.trim();
+  if(!/^\d{5}$/.test(v)){ document.getElementById('idErr').style.display='block'; return; }
+  document.getElementById('idErr').style.display='none';
+  S.student = v; S.cls = v.slice(0,3); S.seat = v.slice(3);
+  logRow({level:0, event:'enter'});
+  go('s-l1');
+}
+function logLevel(lv){
+  const dur = S.levelStart[lv] ? Math.round((Date.now()-S.levelStart[lv])/1000) : 0;
+  logRow({level:lv, event:'clear', attempts:S.attempts[lv], errors:S.errors[lv],
+    tags:S.tagsL[lv], duration_sec:dur});
+}
 
 const SCREENS = ['s-start','s-l1','s-l2','s-l3','s-l4','s-report'];
 const NAMES = ['開始','第1關 觀察','第2關 列表','第3關 假設法','第4關 生活','偵探報告'];
@@ -297,6 +344,7 @@ function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   S.level = SCREENS.indexOf(id);
+  if(S.level>=1 && S.level<=4 && !S.levelStart[S.level]) S.levelStart[S.level] = Date.now();
   renderProgress();
   window.scrollTo(0,0);
 }
@@ -377,6 +425,7 @@ function checkL1(){
   S.attempts[1]++;
   const feet = c1*2 + (8-c1)*4;
   if(feet===22){
+    logLevel(1);
     fb('f1c', true, `太厲害了！🐔雞 ${c1} 隻、🐰兔 ${8-c1} 隻：${c1}×2＋${8-c1}×4＝22 ✔️<br>📝 把答案記到學習單第 1 題，然後前進第 2 關！<br><br><button class="btn small" onclick="go('s-l2')">➡️ 前進第 2 關</button>`);
   }else{
     S.errors[1]++; addTag('腳數計算');
@@ -431,6 +480,7 @@ function ckL2(i){
 function pickL2(j, cells){
   S.attempts[2]++;
   if(L2[j].f===26){
+    logLevel(2);
     cells[j].classList.add('picked');
     fb('f2b', true, `🎉 找到了！<b>雞 7 隻、兔 3 隻</b>：7×2＋3×4＝26 ✔️<br>📝 記到學習單第 2 題。<br>可是……如果有 100 隻動物，列表要列到手痠！有更快的方法嗎？<br><br><button class="btn small" onclick="go('s-l3')">➡️ 前進第 3 關：假設法！</button>`);
   }else{
@@ -461,6 +511,7 @@ function ck3(n){
   if(n===5){
     const v = Number(document.getElementById('a35').value);
     if(v===2){
+      logLevel(3);
       fb('f35',true,'✔️ 9－7＝2，雞有 2 隻！');
       document.getElementById('verify3').style.display='block';
       setTimeout(()=>{
@@ -500,6 +551,7 @@ function ck4b(){
   const m = Number(document.getElementById('a43').value);
   const c = Number(document.getElementById('a44').value);
   if(m===60 && c===120){
+    logLevel(4);
     fb('f4b', true, '🏆 太強了！機車 60 次、汽車 120 次：30×60＋150×120＝19800 ✔️<br><br><button class="btn" onclick="finish()">🏅 領取偵探報告</button>');
   }else{
     S.errors[4]++; addTag('情境轉換');
