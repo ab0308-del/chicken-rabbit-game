@@ -271,6 +271,14 @@
       </div>
       <p class="center" style="margin-top:12px; color:#666;">📝 最後別忘了完成學習單的「偵探反思」喔！</p>
     </div>
+    <div class="card center" id="awardView" style="display:none;">
+      <h2>🏆 我的偵探獎狀</h2>
+      <img id="awardImg" style="max-width:100%; border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,.25);" alt="偵探獎狀">
+      <p style="margin-top:12px; color:#666;">📱 手機：<b>長按上面的獎狀圖片</b>就能儲存或分享給家人！</p>
+      <div style="margin-top:10px;">
+        <button class="btn small blue" onclick="downloadAward()">⬇️ 下載圖片</button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -284,6 +292,7 @@ const S = {
   tags: {},   // 迷思標記（全場）
   tagsL: {1:{},2:{},3:{},4:{}},   // 迷思標記（分關）
   levelStart: {},
+  awardURL: '', awardName: '',
   student: '', cls: '', seat: ''
 };
 const TAG_ADVICE = {
@@ -621,9 +630,19 @@ function makeAward(){
   g.fillStyle = '#666666';
   const d = new Date();
   g.fillText(d.getFullYear() + ' 年 ' + (d.getMonth()+1) + ' 月 ' + d.getDate() + ' 日', 600, 730);
+  // 顯示在畫面上：手機長按儲存，電腦按下載
+  S.awardURL = cv.toDataURL('image/png');
+  S.awardName = name;
+  document.getElementById('awardImg').src = S.awardURL;
+  const view = document.getElementById('awardView');
+  view.style.display = 'block';
+  setTimeout(()=>view.scrollIntoView({block:'start', behavior:'smooth'}), 50);
+}
+function downloadAward(){
+  if(!S.awardURL) return;
   const a = document.createElement('a');
-  a.href = cv.toDataURL('image/png');
-  a.download = '雞兔偵探獎狀_' + name + '.png';
+  a.href = S.awardURL;
+  a.download = '雞兔偵探獎狀_' + (S.awardName||'學生') + '.png';
   a.click();
 }
 </script>
